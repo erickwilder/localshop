@@ -78,6 +78,8 @@ def get_package_data(name, package=None):
     if response.status_code != 200:
         return
 
+    return response.json()
+
     package_data = response.json()
     name = package_data['info']['name']
 

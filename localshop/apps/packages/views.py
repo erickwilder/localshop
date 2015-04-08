@@ -89,7 +89,7 @@ class SimpleDetail(DetailView):
             condition |= Q(name__iexact=name)
 
         try:
-            package = models.Package.objects.get(condition)
+            package = models.Package.objects.get(condition).to_dict()
         except ObjectDoesNotExist:
             package = get_package_data(slug)
 
@@ -97,15 +97,15 @@ class SimpleDetail(DetailView):
             raise Http404
 
         # Redirect if slug is not an exact match
-        if slug != package.name:
+        if slug != package['info']['name']:
             url = reverse('packages-simple:simple_detail',
-                          kwargs={'slug': package.name})
+                          kwargs={'slug': package['info']['name']})
             return redirect(url)
 
         self.object = package
         context = self.get_context_data(
             object=self.object,
-            releases=list(package.releases.all()))
+            releases=package['releases'])
         return self.render_to_response(context)
 
 simple_detail = SimpleDetail.as_view()

@@ -4,6 +4,7 @@ import os
 from docutils.utils import SystemMessage
 from shutil import copyfileobj
 from tempfile import NamedTemporaryFile
+from collections import defaultdict
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -65,6 +66,43 @@ class Package(models.Model):
             files = dict((r.filename, r) for r in release.files.all())
             result[release.version] = (release, files)
         return result
+
+    def to_dict(self):
+        output = {
+            'info': {},
+            'releases': defaultdict(list),
+            'urls': defaultdict(list),
+        }
+        for i, release in enumerate(self.releases.all()):
+            for release_file in release.files.all():
+                data = {
+                    'python_version': release_file.python_version,
+                    'url': release_file.url,
+                    'md5_digest': release_file.md5_digest,
+                    'filename': release_file.filename,
+                    'packagetype': release_file.filetype,
+                    'size': release_file.size
+                }
+                output['releases'][release.version].append(data)
+
+                if i == 0:
+                    output['urls'][release.version].append(data)
+
+        output['info']['author'] = release.author
+        output['info']['author_email'] = release.author_email
+        output['info']['classifiers'] = []
+        output['info']['description'] = release.description
+        output['info']['download_url'] = release.download_url
+        output['info']['home_page'] = release.home_page
+        output['info']['license'] = release.license
+        output['info']['name'] = self.name
+        output['info']['summary'] = release.summary
+        output['info']['version'] = release.version
+
+        output['releases'] = dict(output['releases'])
+        output['urls'] = output['releases']
+
+        return output
 
     @property
     def last_release(self):
